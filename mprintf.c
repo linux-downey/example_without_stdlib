@@ -1,10 +1,20 @@
 #include "mprintf.h"
 #include "mstdarg.h"
+#include "mcommon.h"
 
-#if 0
+
+#if 1
+
+
+static void mputc(struct printf_info *info, char ch)
+{
+	info->buf[info->index++] = ch;
+}
+
+
 void putc_normal(struct printf_info *info, char ch)
 {
-	putc(ch);
+	mputc(info,ch);
 }
 
 static void out(struct printf_info *info, char c)
@@ -33,12 +43,24 @@ static void div_out(struct printf_info *info, unsigned long *num,
 }
 
 
-static void mputc(struct printf_info *info, char ch)
+
+
+static int call_write_syscall(struct printf_info *info)
 {
-	info->buf[index++] = ch;	
+	asm("mov r0,#1\n\t"
+	    "mov r1,%0\n\t"
+	    "mov r2,%1\n\t"
+	    "mov r7,#4\n\t"
+	    "svc #0"
+	    :
+	    :"r"(info->buf),"r"(info->index)
+	    :"r0","r1","r2","r7"
+	);
+	return 0;
 }
 
-int print(const char *fmt, ...)
+
+int mprintf(const char *fmt, ...)
 {
 	struct printf_info info;
 
@@ -49,9 +71,12 @@ int print(const char *fmt, ...)
 	va_start(va, fmt);
 	ret = _vprintf(&info, fmt, va);
 	va_end(va);
-
+	call_write_syscall(&info);
 	return ret;
 }
+
+
+
 
 int _vprintf(struct printf_info *info, const char *fmt, va_list va)
 {
@@ -168,6 +193,12 @@ abort:
 	return 0;
 }
 #endif
+
+
+int mmain(int argc,char* argv[])
+{
+	mprintf("hello world\n");
+}
 
 int summary(int num,...)
 {

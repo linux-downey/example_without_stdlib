@@ -1,7 +1,7 @@
 #ifndef _MPRINT_
 #define _MPRINT_
 
-int print(const char *fmt, ...);
+int mprintf(const char *fmt, ...);
 
 struct printf_info {
 	char *bf;	/* Digit buffer */
